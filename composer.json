@@ -1,0 +1,8 @@
+{
+    "require": {
+        "guzzlehttp/guzzle": "7.0",
+        "league/climate": "^3.8",
+        "nategood/commando": "^0.4.0",
+        "symfony/process": "^5.4"
+    }
+}
