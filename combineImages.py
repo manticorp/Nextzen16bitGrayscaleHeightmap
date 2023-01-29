@@ -1,8 +1,4 @@
-import time
-import cupy as cp
-import numpy as np
 import sys
-from os import path
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = 300000*300000
 
