@@ -1,5 +1,4 @@
 import time
-import cupy as cp
 import numpy as np
 import sys
 from os import path
@@ -15,6 +14,11 @@ if not path.exists(fn):
     raise ValueError('File {} does not exist'.format(fn))
 
 usecupy = False
+try:
+    import cupy as cp
+    usecupy = True
+except ImportError or ModuleNotFoundError:
+    usecupy = False
 
 nfn = '{}-gs-norm-{}.png'.format(path.splitext(fn)[0], 'cupy' if usecupy else 'numpy')
 
