@@ -6,7 +6,7 @@
    * Composer
  * Python3
    * numpy
-   * cupy (optional)
+   * cupy (optional - only use if you have a GPU, not recommended as it's not much faster than numpy tbh)
    * PIL
    
 ## Installation
