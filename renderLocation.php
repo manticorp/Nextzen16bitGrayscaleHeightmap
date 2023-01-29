@@ -127,10 +127,7 @@ $location['zoom'] = $cmd['zoom'];
 $location['tilesx'] = $cmd['tilesx'];
 $location['tilesy'] = $cmd['tilesy'];
 
-if ($cmd['location']) {
-    if (!array_key_exists($cmd['location'], $locations)) {
-        throw new Exception('Location ' . $cmd['location'] . ' does not have a configuration');
-    }
+if ($cmd['location'] && array_key_exists($cmd['location'], $locations)) {
     $location['latitude']  = $location['latitude'] ?? $locations[$cmd['location']]['latitude'] ?? $defaultConfig['latitude'];
     $location['longitude'] = $location['longitude'] ?? $locations[$cmd['location']]['longitude'] ?? $defaultConfig['longitude'];
     $location['zoom']      = $location['zoom'] ?? $locations[$cmd['location']]['zoom'] ?? $defaultConfig['zoom'] ?? 10;
@@ -249,7 +246,8 @@ for ($x = $xmin; $x <= $xmax; $x++) {
 $progress->current($totalTiles, 'Download complete, now to combine the images');
 
 // Finally, we have a Python script for post-processing the images.
-$nfn  = sprintf($outputDir . 'render-direct-%d-%d+%d-%d+%d-p.png', $z, $xmin, $tx, $ymin, $ty);
+$p = $cmd['location']??'render-direct';
+$nfn  = sprintf($outputDir . '%s-%d-%d+%d-%d+%d-p.png', $p, $z, $xmin, $tx, $ymin, $ty);
 $cmd1 = sprintf($cmd['python'] . ' combineImages.py %d %d %d %d %d %d "%s"', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn);
 $cmd2 = sprintf($cmd['python'] . ' convertTo16BitCpu.py "%s"', $nfn);
 
