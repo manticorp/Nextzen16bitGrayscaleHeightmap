@@ -29,4 +29,9 @@ return [
         'longitude' => -0.1157,
         'zoom' => 13
     ],
+    'colorado_river' => [
+        'latitude' => 36.34801,
+        'longitude' => -112.45470,
+        'zoom' => 13
+    ],
 ];
