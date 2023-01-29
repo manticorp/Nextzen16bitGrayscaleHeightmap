@@ -1,8 +1,14 @@
 {
+    "repositories": [
+        {
+            "url": "https://github.com/manticorp/commando.git",
+            "type": "git"
+        }
+    ],
     "require": {
         "guzzlehttp/guzzle": "7.0",
         "league/climate": "^3.8",
-        "nategood/commando": "^0.4.0",
+        "manticorp/commando": "dev-master",
         "symfony/process": "^5.4"
     }
 }
