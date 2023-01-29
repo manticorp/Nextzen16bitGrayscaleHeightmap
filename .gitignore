@@ -3,3 +3,5 @@ vendor
 *.sublime-workspace
 *.sublime-project
 composer.lock
+config.php
+output/

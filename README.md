@@ -23,9 +23,17 @@ For all options use
 
 ```php renderLocation.php --help```
 
+Any option can be defaulted in the given  ```config.php``` file.
+
+You can store commonly used locations under a key in ```locations.config.php```
+
+Command line args take precedence over conf options, so you can for example specify a different tile width or zoom level
+
 Example command
 
 ```php renderLocation.php -a YOUR_API_KEY --latitude 12.345 --longitude 123.456 --zoom 15 -x 5 -y 5 -e```
+
+```php renderLocation.php -a YOUR_API_KEY --location central_london -e```
 
 ## Examples
 

@@ -7,7 +7,24 @@
  * @license MIT https://opensource.org/licenses/MIT
  */
 
-include 'vendor/autoload.php';
+require 'vendor/autoload.php';
+
+$defaultConfig = [
+    'cachedir' => 'cache',
+    'python' => 'python',
+    'tiledimension' => 256,
+    'outputdir' => 'output',
+];
+$locations = [];
+
+if (file_exists('locations.config.php')) {
+    $locations += include "locations.config.php";
+}
+
+if (file_exists('config.php')) {
+    $cfgFile = include 'config.php';
+    $defaultConfig = $cfgFile + $defaultConfig;
+}
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise;
@@ -20,29 +37,27 @@ $client = new Client();
 $cli    = new CLImate();
 $cmd    = new Command();
 
-$cmd->option('l')
-    ->aka('latitude')
-    ->default(36.6271)
+$cmd->option('location')
+    ->describedAs('Use a named location from location.conf.php - all params can be overridden on the command line args.');
+
+$cmd->option('latitude')
+    ->aka('l')
     ->describedAs('The latitude for the center point for your export');
 
-$cmd->option('k')
-    ->aka('longitude')
-    ->default(138.20453)
+$cmd->option('longitude')
+    ->aka('k')
     ->describedAs('The longitude for the center point for your export');
 
-$cmd->option('z')
-    ->aka('zoom')
-    ->default(15)
+$cmd->option('zoom')
+    ->aka('z')
     ->describedAs('The zoom level of your export');
 
-$cmd->option('x')
-    ->aka('tilesx')
-    ->default(33)
+$cmd->option('tilesx')
+    ->aka('x')
     ->describedAs('The number of tiles to output in the +/- x direction. This does not include the center tile, e.g. a value of 1 will be 3 tiles in width.');
 
-$cmd->option('y')
-    ->aka('tilesy')
-    ->default(33)
+$cmd->option('tilesy')
+    ->aka('y')
     ->describedAs('The number of tiles to output in the +/- y direction. This does not include the center tile, e.g. a value of 1 will be 3 tiles in height.');
 
 $cmd->option('apikey')
@@ -52,39 +67,101 @@ $cmd->option('apikey')
 
 $cmd->option('python')
     ->aka('p')
-    ->default('python')
     ->describedAs('Location of python binary');
 
-$cmd->option('c')
-    ->aka('cacheDir')
-    ->default('cache')
+$cmd->option('cachedir')
+    ->aka('c')
     ->describedAs('The cache directory to use');
 
-$cmd->option('t')
-    ->aka('tiledimension')
-    ->default(256)
+$cmd->option('outputdir')
+    ->aka('o')
+    ->describedAs('The output directory to use');
+
+$cmd->option('tiledimension')
+    ->aka('t')
     ->describedAs('The width/height of the outputted tiles. Will be 256 in most cases I believe.');
 
-$cmd->option('e')
-    ->aka('executepython')
+$cmd->option('executepython')
+    ->aka('e')
     ->boolean()
     ->describedAs('Whether to execute python scripts, by default just shows the commands');
 
-$apiKey   = $cmd['apikey'];
-$url      = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/%d/%d/%d.png?api_key=%s";
-$cacheDir = 'cache';
+$cmd->option('verbose')
+    ->aka('v')
+    ->boolean()
+    ->describedAs('Verbose output');
+
+$location = [
+    'latitude'  => null,
+    'longitude' => null,
+    'zoom'      => null,
+    'tilesx'    => null,
+    'tilesy'    => null,
+];
+
+foreach ($defaultConfig as $key => $value) {
+    if ($cmd->hasOption($key) && !array_key_exists($key, $location)) {
+        $cmd->getOption($key)->setDefault($value);
+    }
+}
+
+$apiKey    = $cmd['apikey'];
+$url       = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/%d/%d/%d.png?api_key=%s";
+$cacheDir  = $cmd['cachedir'];
+$outputDir = $cmd['outputdir'];
+
+if (!empty($outputDir)) {
+    $outputDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $outputDir);
+    $outputDir = finish($outputDir, DIRECTORY_SEPARATOR);
+
+    if (!is_dir($outputDir)) {
+        mkdir($outputDir, 0755, true);
+    }
+}
 
 $tileWidth = $cmd['tiledimension'];
 
-// The location in the form [latitude, longitude, zoom].
-$location = [
-    $cmd['latitude'],
-    $cmd['longitude'],
-    $cmd['zoom'],
-];
+$location['latitude'] = $cmd['latitude'];
+$location['longitude'] = $cmd['longitude'];
+$location['zoom'] = $cmd['zoom'];
+$location['tilesx'] = $cmd['tilesx'];
+$location['tilesy'] = $cmd['tilesy'];
+
+if ($cmd['location']) {
+    if (!array_key_exists($cmd['location'], $locations)) {
+        throw new Exception('Location ' . $cmd['location'] . ' does not have a configuration');
+    }
+    $location['latitude']  = $location['latitude'] ?? $locations[$cmd['location']]['latitude'] ?? $defaultConfig['latitude'];
+    $location['longitude'] = $location['longitude'] ?? $locations[$cmd['location']]['longitude'] ?? $defaultConfig['longitude'];
+    $location['zoom']      = $location['zoom'] ?? $locations[$cmd['location']]['zoom'] ?? $defaultConfig['zoom'] ?? 10;
+    $location['tilesx']    = $location['tilesx'] ?? $locations[$cmd['location']]['tilesx'] ?? $defaultConfig['tilesx'] ?? 10;
+    $location['tilesy']    = $location['tilesy'] ?? $locations[$cmd['location']]['tilesy'] ?? $defaultConfig['tilesy'] ?? 10;
+}
+
+if (empty($location['latitude'])) {
+    throw new Exception('No latitude given');
+}
+
+if (empty($location['longitude'])) {
+    throw new Exception('No longitude given');
+}
 
 if (!is_dir($cacheDir)) {
     mkdir($cacheDir, 0755, true);
+}
+
+/**
+ * Cap a string with a single instance of a given value.
+ *
+ * @param string $value The value to end
+ * @param string $cap   The value to end with
+ *
+ * @return string
+ */
+function finish($value, $cap)
+{
+    $quoted = preg_quote($cap, '/');
+    return preg_replace('/(?:'.$quoted.')+$/u', '', $value).$cap;
 }
 
 /**
@@ -119,13 +196,13 @@ function getTileCoordsFromLatLng($lat, $lon, $zoom)
     ];
 }
 
-$tileCoords = getTileCoordsFromLatLng($location[0], $location[1], $location[2]);
+$tileCoords = getTileCoordsFromLatLng($location['latitude'], $location['longitude'], $location['zoom']);
 
 $z    = $tileCoords[2];
-$ymin = ($tileCoords[0] - $cmd['y']);
-$ymax = ($tileCoords[0] + $cmd['y']);
-$xmin = ($tileCoords[1] - $cmd['x']);
-$xmax = ($tileCoords[1] + $cmd['x']);
+$ymin = ($tileCoords[0] - $location['tilesy']);
+$ymax = ($tileCoords[0] + $location['tilesy']);
+$xmin = ($tileCoords[1] - $location['tilesx']);
+$xmax = ($tileCoords[1] + $location['tilesx']);
 
 $tx = (abs($xmax - $xmin) + 1);
 $ty = (abs($ymax - $ymin) + 1);
@@ -137,8 +214,8 @@ $cli->out(sprintf('    x = <red>%d</red> to <blue>%d</blue> (<green>%d</green> w
 $cli->out(sprintf('    y = <red>%d</red> to <blue>%d</blue> (<green>%d</green> height)', $ymin, $ymax, $ty));
 $cli->out(sprintf('    z = <blue>%d</blue>', $z));
 $cli->green('Center:');
-$cli->out(sprintf('  lat = <blue>%s</blue>', $cmd['latitude']));
-$cli->out(sprintf('  lon = <blue>%s</blue>', $cmd['longitude']));
+$cli->out(sprintf('  lat = <blue>%s</blue>', $location['latitude']));
+$cli->out(sprintf('  lon = <blue>%s</blue>', $location['longitude']));
 
 
 $cli->out(sprintf('Starting %d x %d [%d x %dpx] image download && generation', $tx, $ty, $w, $h));
@@ -153,6 +230,9 @@ for ($x = $xmin; $x <= $xmax; $x++) {
     $promises = [];
     for ($y = $ymin; $y <= $ymax; $y++) {
         $turl    = sprintf($url, $z, $y, $x, $apiKey);
+        if ($cmd['verbose']) {
+            $cli->out(sprintf('Downloading %s', $turl));
+        }
         $cachefn = $cacheDir . DIRECTORY_SEPARATOR  . sprintf('%d-%d-%d.png', $z, $y, $x);
         if (!file_exists($cachefn)) {
             $promises[$cachefn] = $client->getAsync($turl);
@@ -169,7 +249,7 @@ for ($x = $xmin; $x <= $xmax; $x++) {
 $progress->current($totalTiles, 'Download complete, now to combine the images');
 
 // Finally, we have a Python script for post-processing the images.
-$nfn  = sprintf('render-direct-%d-%d+%d-%d+%d-p.png', $z, $xmin, $tx, $ymin, $ty);
+$nfn  = sprintf($outputDir . 'render-direct-%d-%d+%d-%d+%d-p.png', $z, $xmin, $tx, $ymin, $ty);
 $cmd1 = sprintf($cmd['python'] . ' combineImages.py %d %d %d %d %d %d "%s"', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn);
 $cmd2 = sprintf($cmd['python'] . ' convertTo16BitCpu.py "%s"', $nfn);
 
