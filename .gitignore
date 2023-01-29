@@ -2,3 +2,4 @@ cache
 vendor
 *.sublime-workspace
 *.sublime-project
+composer.lock
