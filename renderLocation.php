@@ -49,6 +49,7 @@ $cmd->option('apikey')
     ->aka('a')
     ->required()
     ->describedAs('Terrarium api key');
+    ->describedAs('Nextzen api key');
 
 $cmd->option('c')
     ->aka('cacheDir')
