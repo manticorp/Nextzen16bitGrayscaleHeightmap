@@ -11,6 +11,10 @@
    
 ## Installation
 
+You will need to register for an API key here:
+
+[https://developers.nextzen.org/](a)
+
 ```composer install```
 
 ## Usage
