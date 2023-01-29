@@ -30,3 +30,11 @@ The examples in this gist are generated using the following command:
 ```php renderLocation.php -a YOUR_API_KEY -l 36.6271 -k 138.20453 -x 8 -y 8 -z 13 -e```
 
 On my XPS 15 9350 with i7 and 32GB ram, aside from downloading, the process takes around 15s to complete for this example.
+
+### 8 bit RGB output
+
+![Example Output Colour](example_output_rgb.png)
+
+### 16 bit grayscale output
+
+![Example Output Grayscale](example_output_grayscale.png)
