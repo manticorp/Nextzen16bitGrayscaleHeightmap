@@ -48,8 +48,12 @@ $cmd->option('y')
 $cmd->option('apikey')
     ->aka('a')
     ->required()
-    ->describedAs('Terrarium api key');
     ->describedAs('Nextzen api key');
+
+$cmd->option('python')
+    ->aka('p')
+    ->default('python')
+    ->describedAs('Location of python binary');
 
 $cmd->option('c')
     ->aka('cacheDir')
@@ -166,12 +170,12 @@ $progress->current($totalTiles, 'Download complete, now to combine the images');
 
 // Finally, we have a Python script for post-processing the images.
 $nfn  = sprintf('render-direct-%d-%d+%d-%d+%d-p.png', $z, $xmin, $tx, $ymin, $ty);
-$cmd1 = sprintf('python3 combineImages.py %d %d %d %d %d %d "%s"', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn);
-$cmd2 = sprintf('python3 convertTo16BitCpu.py "%s"', $nfn);
+$cmd1 = sprintf($cmd['python'] . ' combineImages.py %d %d %d %d %d %d "%s"', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn);
+$cmd2 = sprintf($cmd['python'] . ' convertTo16BitCpu.py "%s"', $nfn);
 
 if ($cmd['executepython']) {
     $cli->out(sprintf('Executing %s', $cmd1));
-    $process = new Process(['python3', 'combineImages.py', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn]);
+    $process = new Process([$cmd['python'], 'combineImages.py', $xmin, $tx, $ymin, $ty, $z, $tileWidth, $nfn]);
     $process->run(
         function ($type, $buffer) use ($cli) {
             if (Process::ERR === $type) {
@@ -183,7 +187,7 @@ if ($cmd['executepython']) {
     );
 
     $cli->out(sprintf('Executing %s', $cmd2));
-    $process = new Process(['python3', 'convertTo16BitCpu.py', $nfn]);
+    $process = new Process([$cmd['python'], 'convertTo16BitCpu.py', $nfn]);
     $process->run(
         function ($type, $buffer) use ($cli) {
             if (Process::ERR === $type) {
