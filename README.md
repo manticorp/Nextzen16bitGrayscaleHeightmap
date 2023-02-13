@@ -13,9 +13,14 @@
 
 You will need to register for an API key here:
 
-[https://developers.nextzen.org/](a)
+[https://developers.nextzen.org/](https://developers.nextzen.org/)
 
-```composer install```
+Then navigate to the project directory and run composer install:
+
+```
+cd Nextzen16bitGrayscaleHeightmap
+composer install
+```
 
 ## Usage
 
