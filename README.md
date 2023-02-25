@@ -1,3 +1,9 @@
+# New Project
+
+Please see https://manticorp.github.io/unrealheightmap/ for an in-browser version that works without having to download anything, with a much more intuitive interface.
+
+I will leave this repo up for posterity.
+
 # Convert tangram tiles to 16 bit grayscale PNG
 
 ## Requirements
